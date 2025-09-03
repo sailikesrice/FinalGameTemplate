@@ -1,15 +1,16 @@
-import { Scene } from 'phaser';
+import { Scene } from "phaser";
 
 export class Boot extends Scene {
   constructor() {
-    super('Boot');
+    super("Boot");
   }
 
   preload() {
-    this.load.image('player', 'https://labs.phaser.io/assets/sprites/phaser-dude.png');
+    // load player sprite
+    this.load.image("player", "/assets/player.png"); // make sure file exists in public/assets/
   }
 
   create() {
-    this.scene.start('Preloader');
+    this.scene.start('Preloader'); // go directly to dungeon
   }
 }

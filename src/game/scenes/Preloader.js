@@ -7,6 +7,7 @@ export class Preloader extends Scene {
 
   preload() {
     // Load extra assets here later
+    this.load.image("player", "assets/player.png");
   }
 
   create() {
