@@ -1,3 +1,5 @@
+/ * This is just the template, delete if you must * /
+
 import { EventBus } from '../EventBus';
 import { Scene } from 'phaser';
 
