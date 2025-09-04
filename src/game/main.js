@@ -1,3 +1,5 @@
+/ * DO NOT TOUCH * /
+
 import Phaser from 'phaser';
 import { Boot } from './scenes/Boot';
 import { Preloader } from './scenes/Preloader';
