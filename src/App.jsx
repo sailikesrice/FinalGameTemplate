@@ -1,3 +1,5 @@
+/ * DO NOT TOUCH * /
+
 import { useRef } from 'react';
 import { PhaserGame } from './PhaserGame';
 
