@@ -10,6 +10,8 @@ export class Preloader extends Scene {
   preload() {
     // Load extra assets here later
     this.load.image("player", "assets/player.png");
+    this.load.image("floor", "assets/floor.png");
+    this.load.image("wall", "assets/wall.png");
   }
 
   create() {
