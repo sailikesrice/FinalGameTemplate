@@ -1,3 +1,5 @@
+/ * CHANGE HOWEVER YOU LIKE * /
+
 import { EventBus } from '../EventBus';
 import { Scene } from 'phaser';
 
