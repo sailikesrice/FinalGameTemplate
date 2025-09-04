@@ -204,7 +204,7 @@ export class Dungeon extends Scene {
     this.movePlayer(x, y);
   }
 
-  // === Random Puzzle Generation ===
+  // === Random Puzzle Generation === //
   createRandomEquationPuzzle(rx, ry, offsetX, offsetY) {
     const { equation, pieces } = this.generateEquation();
     Phaser.Utils.Array.Shuffle(pieces);
