@@ -1,3 +1,5 @@
+/ * DO NOT TOUCH * /
+
 import { forwardRef, useLayoutEffect, useRef } from 'react';
 import StartGame from './game/main';
 
