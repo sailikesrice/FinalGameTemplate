@@ -13,7 +13,6 @@ export class Preloader extends Scene {
     this.load.image("floor", "assets/floor.png");
     this.load.image("wall", "assets/wall.png");
     this.load.image("btn", "https://labs.phaser.io/assets/ui/button.png");
-
     this.load.image("up-arrow", "assets/up-arrow.png");
     this.load.image("down-arrow", "assets/down-arrow.png");
     this.load.image("left-arrow", "assets/left-arrow.png");
@@ -21,6 +20,6 @@ export class Preloader extends Scene {
   }
 
   create() {
-    this.scene.start('Dungeon');
+    this.scene.start('MainMenu');
   }
 }

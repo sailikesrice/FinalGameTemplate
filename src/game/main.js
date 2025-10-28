@@ -3,7 +3,9 @@
 import Phaser from 'phaser';
 import { Boot } from './scenes/Boot';
 import { Preloader } from './scenes/Preloader';
+import { MainMenu } from './scenes/MainMenu';
 import { Dungeon } from './scenes/Dungeon';
+import { LevelComplete } from './scenes/LevelComplete';
 
 const config = {
   type: Phaser.AUTO,
@@ -18,7 +20,7 @@ const config = {
       debug: false,
     }
   },
-  scene: [Boot, Preloader, Dungeon]
+  scene: [Boot, Preloader, MainMenu, Dungeon, LevelComplete]
 };
 
 const StartGame = (parent) => new Phaser.Game({ ...config, parent });
