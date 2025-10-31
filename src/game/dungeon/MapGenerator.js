@@ -3,6 +3,7 @@ import { GameSettings } from './GameSettings';
 
 export class MapGenerator {
   generateLayout() {
+    console.log('[MapGenerator] generateLayout start');
     const ROOMS_PER_LEVEL = GameSettings.getRoomsPerLevel();
     const layout = new Set();
     let current = { x: 0, y: 0 };
@@ -20,10 +21,12 @@ export class MapGenerator {
       current = next;
     }
 
-    return Array.from(layout).map(str => {
+    const result = Array.from(layout).map(str => {
       const [x, y] = str.split(',').map(Number);
       return { x, y };
     });
+    console.log('[MapGenerator] generateLayout result', { rooms: result.length, sample: result.slice(0, 6) });
+    return result;
   }
 }
 

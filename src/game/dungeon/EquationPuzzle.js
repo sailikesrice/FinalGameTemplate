@@ -92,6 +92,8 @@ export class EquationPuzzle {
     return { tiles, tileMap, equation };
   }
 
+  // (Hint feature removed)
+
   handleTileDrop(tile, tileMap, startCol, maxPieces) {
     const y = tile.getData('originalY');
     let snappedCol = Math.round((tile.x - this.offsetX - TILE_SIZE / 2) / TILE_SIZE);
@@ -183,29 +185,41 @@ export class EquationPuzzle {
     // Fallback to all if empty for robustness
     const pool = allowed.length ? allowed : ['+', '-', '×', '÷'];
     const op = Phaser.Utils.Array.GetRandom(pool);
+    
+    // Get difficulty rating from the scene
+    const difficultyRating = this.scene.difficultyRating || 1;
+    
     let a, b, result, eq;
     switch (op) {
       case '+':
-        a = Phaser.Math.Between(1, 9);
-        b = Phaser.Math.Between(1, 9);
+        // Higher difficulty = larger numbers
+        const maxAdd = 9 + (difficultyRating - 1) * 5;
+        a = Phaser.Math.Between(1, maxAdd);
+        b = Phaser.Math.Between(1, maxAdd);
         result = a + b;
         eq = `${a} + ${b} = ${result}`;
         break;
       case '-':
-        a = Phaser.Math.Between(5, 15);
+        // Higher difficulty = larger numbers and more complex subtraction
+        const maxSub = 15 + (difficultyRating - 1) * 10;
+        a = Phaser.Math.Between(5, maxSub);
         b = Phaser.Math.Between(1, a);
         result = a - b;
         eq = `${a} - ${b} = ${result}`;
         break;
       case '×':
-        a = Phaser.Math.Between(2, 5);
-        b = Phaser.Math.Between(2, 5);
+        // Higher difficulty = larger multiplication tables
+        const maxMult = 5 + (difficultyRating - 1) * 3;
+        a = Phaser.Math.Between(2, maxMult);
+        b = Phaser.Math.Between(2, maxMult);
         result = a * b;
         eq = `${a} × ${b} = ${result}`;
         break;
       default: // '÷'
-        b = Phaser.Math.Between(2, 5);
-        result = Phaser.Math.Between(2, 5);
+        // Higher difficulty = larger division problems
+        const maxDiv = 5 + (difficultyRating - 1) * 3;
+        b = Phaser.Math.Between(2, maxDiv);
+        result = Phaser.Math.Between(2, maxDiv);
         a = b * result;
         eq = `${a} ÷ ${b} = ${result}`;
         break;

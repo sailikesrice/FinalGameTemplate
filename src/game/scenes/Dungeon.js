@@ -1,10 +1,5 @@
 /*
- * @file Dungeon.js
- * @description Dungeon scene with levels, randomized math puzzles, and a progress minimap.
- * Each level has 6 rooms with a predetermined random map structure.
- * Puzzle tiles can swap positions instead of overlapping.
- * Shows a popup after completing every level.
- * @sailikesrice
+ * Developed @sailikesrice
  */
 
 import { Scene } from "phaser";
@@ -13,10 +8,10 @@ import { GameSettings } from "../dungeon/GameSettings";
 import { MapGenerator } from "../dungeon/MapGenerator";
 import { Room } from "../dungeon/Room";
 import { PlayerController } from "../dungeon/PlayerController";
-import { Minimap } from "../dungeon/Minimap";
 import { PopupUI } from "../dungeon/PopupUI";
 import { MobileControls } from "../dungeon/MobileControls";
 import { EquationPuzzle } from "../dungeon/EquationPuzzle";
+import { DifficultyAlgorithm } from "../dungeon/DifficultyAlgorithm";
 
 export class Dungeon extends Scene {
   constructor() {
@@ -42,15 +37,29 @@ export class Dungeon extends Scene {
     }
     if (data && data.sessionCode) this.registry.set('sessionCode', data.sessionCode);
     if (data && data.role) this.registry.set('role', data.role);
+    if (data && data.difficultyAlgorithm) {
+      this.difficultyAlgorithm = data.difficultyAlgorithm;
+    } else {
+      // Create a new difficulty algorithm if not provided
+      this.difficultyAlgorithm = new DifficultyAlgorithm();
+      this.difficultyAlgorithm.startLevel(this.level);
+    }
+    
+    // Store difficulty rating for adaptive difficulty
+    this.difficultyRating = data?.difficultyRating || 1;
   }
 
   create() {
     // static group used for all walls (so we can clear them easily)
     this.walls = this.physics.add.staticGroup();
 
+    // Ensure player is null on scene start (fresh scene)
+    this.player = null;
+    this.cursors = null;
+    this.keys = null;
+
     // init helpers
     this.mapGen = new MapGenerator();
-    this.minimap = new Minimap(this);
     this.playerCtrl = new PlayerController(this);
     this.popup = new PopupUI(this);
     this.mobile = new MobileControls(this);
@@ -59,11 +68,16 @@ export class Dungeon extends Scene {
 
     // listen for puzzle tile changes
     this.events.on('puzzle-updated', (rx, ry) => this.checkPuzzle(rx, ry));
-
+    
     this.startLevel();
 
     // mobile controls
     this.mobile.create((dx, dy) => this.tryMove(dx, dy));
+
+    // Add difficulty indicator for tutorial mode
+    if (GameSettings.getTutorial()) {
+      this.createDifficultyIndicator();
+    }
   }
 
   update() {
@@ -86,21 +100,29 @@ export class Dungeon extends Scene {
   // ====== LEVEL MANAGEMENT ======
   startLevel() {
     // Clean up any leftover objects if this is a restart
-    // Note: don't remove minimap here (it's reused)
-    // but clear scene walls/floors/tiles
-    if (!this.minimap || !this.minimap.squares.length) this.minimap.create(this.level);
+    // Clear scene walls/floors/tiles
 
     // reset trackers
     this.clearLevelObjects(); // clears any previous graphics (if exist)
     this.rooms = {};
     this.roomsCompleted = 0;
+    // Ensure we start from the spawn room every level
+    this.currentRoom = { x: 0, y: 0 };
     this.mapLayout = this.mapGen.generateLayout();
+    try {
+      console.log('[Dungeon] startLevel:', JSON.stringify({
+        level: this.level,
+        difficultyRating: this.difficultyRating,
+        layoutLen: this.mapLayout ? this.mapLayout.length : 0,
+        layout: this.mapLayout
+      }));
+    } catch (e) { console.log('[Dungeon] startLevel log failed'); }
 
-    // prepare minimap
-    this.updateMinimap();
+    // minimap removed
 
     // generate rooms (first room is start)
     this.generateRoom(0, 0);
+    console.log('[Dungeon] generated room 0,0');
 
     // mark starting room as solved (it has no puzzle)
     this.rooms["0,0"].solved = true;
@@ -108,6 +130,15 @@ export class Dungeon extends Scene {
 
     // Player spawn
     this.playerCtrl.spawnAt(0, 0, Math.floor(ROOM_SIZE / 2), Math.floor(ROOM_SIZE / 2));
+    const centerCol = Math.floor(ROOM_SIZE / 2);
+    const center = this.playerCtrl.getTileCenter(0, 0, centerCol, centerCol);
+    try {
+      console.log('[Dungeon] spawnAt:', JSON.stringify({
+        currentRoom: this.currentRoom,
+        playerPos: this.player ? { x: this.player.x, y: this.player.y } : null,
+        expectedCenter: center
+      }));
+    } catch (e) { console.log('[Dungeon] spawnAt log failed'); }
 
     // mark level start time
     this.levelStartMs = performance.now ? performance.now() : Date.now();
@@ -120,43 +151,19 @@ export class Dungeon extends Scene {
     }
   }
 
-  nextLevel() {
-    // close popup if open (safe cleanup)
-    if (this.popupContainer) {
-      try {
-        this.popupContainer.destroy();
-      } catch (e) {}
-      this.popupContainer = null;
+  nextLevel(difficultyRating) {
+    // Prepare for next level using previous player's difficulty rating
+    this.clearLevelObjects();
+    this.level++;
+
+    // Update difficulty context
+    this.difficultyRating = typeof difficultyRating === 'number' ? difficultyRating : (this.difficultyRating || 1);
+    if (this.difficultyAlgorithm && this.difficultyAlgorithm.startLevel) {
+      try { this.difficultyAlgorithm.startLevel(this.level); } catch (e) {}
     }
-    this.popupOpen = false;
 
-    // Fade out, then clear and start next level
-    try {
-      this.cameras.main.fadeOut(350, 0, 0, 0);
-      this.cameras.main.once("camerafadeoutcomplete", () => {
-        // wipe current level objects
-        this.clearLevelObjects();
-
-        // increment level and start fresh
-        this.level++;
-        this.startLevel();
-
-        // Fade back in so player sees the new level
-        this.cameras.main.fadeIn(350, 0, 0, 0);
-
-        // Re-enable input/physics just in case
-        this.input.enabled = true;
-        this.physics.world.resume();
-      });
-    } catch (e) {
-      // fallback if fade fails
-      this.clearLevelObjects();
-      this.level++;
-      this.startLevel();
-
-      this.input.enabled = true;
-      this.physics.world.resume();
-    }
+    // Start the new level
+    this.startLevel();
   }
 
   // Destroys old floors, puzzle tiles and static walls so next level is clean
@@ -245,7 +252,7 @@ export class Dungeon extends Scene {
     const { x, y } = this.playerCtrl.getTileCenter(this.currentRoom.x, this.currentRoom.y, newCol, newRow);
     this.playerCtrl.movePlayer(x, y);
 
-    this.updateMinimap();
+    // minimap removed
 
     // === ROOM TRANSITION EFFECT ===
     if (prevRoom) {
@@ -312,8 +319,10 @@ export class Dungeon extends Scene {
         try { t.setStyle({ backgroundColor: "#0a0" }); } catch (e) {}
       });
 
+      // Record correct answer in difficulty algorithm
+      this.difficultyAlgorithm.recordAnswer(true);
+
       this.roomsCompleted++;
-      this.updateMinimap();
 
       if (this.roomsCompleted >= GameSettings.getRoomsPerLevel()) {
         this.showLevelCompletePopup();
@@ -325,19 +334,37 @@ export class Dungeon extends Scene {
   // returns true if equation is mathematically correct
   evaluateEquationTokens(tokens) { return EquationPuzzle.evaluateTokens(tokens); }
 
-  // ====== MINIMAP ======
-  createMinimap() { this.minimap.create(this.level); }
-
-  updateMinimap() { if (this.minimap) this.minimap.update(this.roomsCompleted, this.level); }
+  // minimap removed
 
   // ====== POPUP (always on top) ======
   showLevelCompletePopup() {
     // route to stats page with elapsed time
     const end = performance.now ? performance.now() : Date.now();
     const elapsedMs = Math.max(0, Math.floor(end - (this.levelStartMs || end)));
-    this.scene.start('LevelStats', { elapsedMs, level: this.level });
+    
+    // Calculate performance metrics
+    const performanceResult = this.difficultyAlgorithm.calculatePerformance();
+    
+    this.scene.start('LevelStats', { 
+      elapsedMs, 
+      level: this.level,
+      performanceResult,
+      difficultyAlgorithm: this.difficultyAlgorithm,
+      tutorial: GameSettings.getTutorial()
+    });
   }
   
+  // (Hint button removed)
+
+  // ====== DIFFICULTY INDICATOR ======
+  createDifficultyIndicator() {
+    const difficultyText = this.add.text(20, 20, `Difficulty: ${this.difficultyRating}`, {
+      fontFamily: 'Arial Black', fontSize: 18, color: '#ff9800',
+      backgroundColor: '#000000',
+      padding: { left: 8, right: 8, top: 4, bottom: 4 }
+    }).setDepth(1000);
+  }
+
   // ====== MOBILE CONTROLS ======
   createMobileControls() { this.mobile.create((dx, dy) => this.tryMove(dx, dy)); }
 }

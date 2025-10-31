@@ -1,9 +1,11 @@
 import { Scene } from 'phaser';
 import { GameSettings } from '../dungeon/GameSettings';
+import { DifficultyAlgorithm } from '../dungeon/DifficultyAlgorithm';
 
 export class TutorialScene extends Scene {
   constructor() {
     super('TutorialScene');
+    this.difficultyAlgorithm = new DifficultyAlgorithm();
   }
 
   create() {
@@ -113,14 +115,19 @@ export class TutorialScene extends Scene {
       const chosenOps = Array.from(selected);
       GameSettings.setAllowed(chosenOps.length ? chosenOps : ['÷']);
       
-      // Set tutorial mode
+      // Set tutorial mode with 6 rooms
       GameSettings.setTutorial(true);
+      GameSettings.setRoomsPerLevel(6);
+      
+      // Initialize difficulty algorithm for tutorial
+      this.difficultyAlgorithm.startLevel(1);
       
       // Start the dungeon in tutorial mode
       this.scene.start('Dungeon', { 
         level: 1, 
         tutorial: true,
-        role: 'student'
+        role: 'student',
+        difficultyAlgorithm: this.difficultyAlgorithm
       });
     };
 

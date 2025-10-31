@@ -13,11 +13,13 @@ export class Room {
     this.floors = this.scene.add.group();
     this.puzzleTiles = [];
     this.equation = null;
+    this.equationPuzzle = null;
     this.tileMap = null;
     this.solved = (rx === 0 && ry === 0);
   }
 
   build() {
+    console.log('[Room] build:', { rx: this.rx, ry: this.ry });
     const offsetX = this.rx * ROOM_SIZE * TILE_SIZE;
     const offsetY = this.ry * ROOM_SIZE * TILE_SIZE;
 
@@ -58,7 +60,8 @@ export class Room {
     }
 
     if (!(this.rx === 0 && this.ry === 0)) {
-      const puzzle = new EquationPuzzle(this.scene, this.rx, this.ry, offsetX, offsetY).create();
+      this.equationPuzzle = new EquationPuzzle(this.scene, this.rx, this.ry, offsetX, offsetY);
+      const puzzle = this.equationPuzzle.create();
       this.puzzleTiles.push(...puzzle.tiles);
       this.equation = puzzle.equation;
       this.tileMap = puzzle.tileMap;
