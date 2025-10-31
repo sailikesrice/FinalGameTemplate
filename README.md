@@ -2,6 +2,68 @@
 
 A fun and educational math puzzle game where players navigate through dungeons solving equations to progress. Perfect for students learning basic arithmetic operations!
 
+## 🚀 How to Run
+
+### Prerequisites
+
+Before running the project, make sure you have the following installed:
+- **Node.js** (version 16 or higher) - [Download here](https://nodejs.org/)
+- **npm** (comes with Node.js) or **yarn**
+
+### Installation
+
+1. **Clone the repository** (or download and extract the project):
+   ```bash
+   git clone https://github.com/sailikesrice/FinalGameTemplate.git
+   cd FinalGameTemplate
+   ```
+
+2. **Install dependencies**:
+   ```bash
+   npm install
+   ```
+
+### Running the Development Server
+
+To run the game in development mode with hot-reloading:
+
+```bash
+npm run dev
+```
+
+The game will be available at `http://localhost:5173` (or another port if 5173 is in use). Open this URL in your web browser to play.
+
+**Note**: The development server will automatically reload when you make changes to the code.
+
+### Building for Production
+
+To create an optimized production build:
+
+```bash
+npm run build
+```
+
+The built files will be output to the `dist/` directory. You can deploy these files to any static hosting service (GitHub Pages, Netlify, Vercel, etc.).
+
+### Alternative Scripts
+
+- `npm run dev-nolog` - Run development server without console logging
+- `npm run build-nolog` - Build for production without console logging
+
+### Troubleshooting
+
+**Port already in use?**
+- If port 5173 is already in use, Vite will automatically use the next available port. Check the console output for the actual port number.
+
+**Dependencies not installing?**
+- Make sure you're using Node.js version 16 or higher
+- Try deleting `node_modules` and `package-lock.json`, then run `npm install` again
+
+**Game not loading?**
+- Check that all dependencies installed correctly
+- Make sure you're accessing the correct URL (usually `http://localhost:5173`)
+- Check the browser console for any error messages
+
 ## 🎮 How to Play
 
 ### Getting Started
