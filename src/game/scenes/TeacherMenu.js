@@ -44,11 +44,11 @@ export class TeacherMenu extends Scene {
 
     const status = this.add.text(centerX, centerY + 180, '', { fontFamily: 'Arial Black', fontSize: 22, color: '#90caf9' }).setOrigin(0.5);
 
-    const start = () => {
+    const start = async () => {
       const chosen = Array.from(selected);
       GameSettings.setAllowed(chosen.length ? chosen : ['+', '-', '×', '÷']);
       GameSettings.setRoomsPerLevel(rooms);
-      const code = SessionManager.createSession({ allowedOps: GameSettings.getAllowed(), roomsPerLevel: rooms });
+      const code = await SessionManager.createSession({ allowedOps: GameSettings.getAllowed(), roomsPerLevel: rooms });
       status.setText(`Session Code: ${code}`);
       // stay on this screen; teacher can share code
     };

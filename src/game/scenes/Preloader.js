@@ -1,6 +1,7 @@
 // * DO NOT TOUCH * //
 
 import { Scene } from 'phaser';
+import { SessionManager } from '../session/SessionManager';
 
 export class Preloader extends Scene {
   constructor() {
@@ -34,7 +35,12 @@ export class Preloader extends Scene {
     } catch (e) {}
   }
 
-  create() {
+  async create() {
+    try { console.log('[Preloader] initializing database...'); } catch (e) {}
+    // Initialize database in background
+    SessionManager.init().catch(err => {
+      console.warn('Database initialization error:', err);
+    });
     try { console.log('[Preloader] starting MainMenu'); } catch (e) {}
     this.scene.start('MainMenu');
   }

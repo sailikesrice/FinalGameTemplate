@@ -13,54 +13,37 @@ export class StudentLobby extends Scene {
     this.add.text(centerX, centerY - 120, 'Student Lobby', { fontFamily: 'Arial Black', fontSize: 40, color: '#ffffff' }).setOrigin(0.5);
     this.add.text(centerX, centerY - 60, 'Enter Session Code', { fontFamily: 'Arial Black', fontSize: 22, color: '#ffffff' }).setOrigin(0.5);
 
-    const inputBg = this.add.rectangle(centerX, centerY - 20, 220, 46, 0x333333).setOrigin(0.5).setInteractive();
-    inputBg.setStrokeStyle(2, 0x555555, 1);
+    const inputBg = this.add.rectangle(centerX, centerY - 20, 220, 46, 0x333333).setOrigin(0.5).setInteractive({ useHandCursor: true });
+    inputBg.setStrokeStyle(2, 0x88c0ff, 1);
     const inputText = this.add.text(centerX, centerY - 20, '', { fontFamily: 'Arial Black', fontSize: 24, color: '#ffee58' }).setOrigin(0.5);
-    let isActive = false;
-    const setActive = (val) => {
-      isActive = !!val;
-      inputBg.setStrokeStyle(2, isActive ? 0x88c0ff : 0x555555, 1);
-    };
-    inputBg.on('pointerdown', (p) => { p.event.stopPropagation(); setActive(true); });
-    this.input.on('pointerdown', () => setActive(false));
-
-    // simple numeric input via key events
-    this.input.keyboard.on('keydown', (ev) => {
-      if (!isActive) return;
-      if (ev.key === 'Backspace') {
-        inputText.setText(inputText.text.slice(0, -1));
-      } else if (ev.key === 'Enter') {
-        join();
-      } else if (/\d/.test(ev.key) && inputText.text.length < 6) {
-        inputText.setText(inputText.text + ev.key);
-      }
-    });
-
-    const joinBg = this.add.rectangle(centerX, centerY + 50, 220, 56, 0x1565c0).setInteractive({ useHandCursor: true });
-    const joinText = this.add.text(centerX, centerY + 50, 'Join', { fontFamily: 'Arial Black', fontSize: 26, color: '#ffffff' }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-    const status = this.add.text(centerX, centerY + 110, '', { fontFamily: 'Arial Black', fontSize: 18, color: '#ef9a9a' }).setOrigin(0.5);
-
-    const join = () => {
-      const code = inputText.text.trim();
-      const session = SessionManager.getSession(code);
-      if (!session) {
-        status.setText('Invalid code');
-        return;
-      }
-      // apply teacher config
-      const cfg = session.config || {};
-      if (cfg.allowedOps) GameSettings.setAllowed(cfg.allowedOps);
-      if (cfg.roomsPerLevel) GameSettings.setRoomsPerLevel(cfg.roomsPerLevel);
-      this.scene.start('Dungeon', { level: 1, sessionCode: code, role: 'student' });
-    };
+    
     // Rankings display
     const rankLabel = this.add.text(centerX, centerY + 170, 'Rankings (fastest first)', { fontFamily: 'Arial Black', fontSize: 18, color: '#ffffff' }).setOrigin(0.5);
-    const drawRankings = () => {
+    this.rankLines = [];
+    
+    const drawRankings = async () => {
       const code = inputText.text.trim();
-      const s = SessionManager.getSession(code);
-      if (!s) { return; }
+      if (!code || code.length !== 6) { 
+        // Clear rankings if code is invalid
+        if (this.rankLines) {
+          this.rankLines.forEach(l => { try { l.destroy(); } catch(e) {} });
+          this.rankLines = [];
+        }
+        return; 
+      }
+      const s = await SessionManager.getSession(code);
+      if (!s) { 
+        // Clear rankings if session not found
+        if (this.rankLines) {
+          this.rankLines.forEach(l => { try { l.destroy(); } catch(e) {} });
+          this.rankLines = [];
+        }
+        return; 
+      }
       // remove previous lines
-      if (this.rankLines) this.rankLines.forEach(l => { try { l.destroy(); } catch(e) {} });
+      if (this.rankLines) {
+        this.rankLines.forEach(l => { try { l.destroy(); } catch(e) {} });
+      }
       this.rankLines = [];
       const top = (s.results || []).slice(0, 5);
       top.forEach((r, idx) => {
@@ -70,10 +53,113 @@ export class StudentLobby extends Scene {
         this.rankLines.push(line);
       });
     };
-    // update rankings when typing/joining
-    this.input.keyboard.on('keydown', drawRankings);
-    joinBg.on('pointerdown', drawRankings);
-    joinBg.on('pointerdown', join); joinText.on('pointerdown', join);
+
+    const join = async () => {
+      const code = inputText.text.trim();
+      if (!code || code.length !== 6) {
+        status.setText('Please enter a 6-digit code');
+        return;
+      }
+      const session = await SessionManager.getSession(code);
+      if (!session) {
+        status.setText('Invalid code');
+        return;
+      }
+      // apply teacher config
+      const cfg = session.config || {};
+      if (cfg.allowedOps) GameSettings.setAllowed(cfg.allowedOps);
+      if (cfg.roomsPerLevel) GameSettings.setRoomsPerLevel(cfg.roomsPerLevel);
+      status.setText('Joining...');
+      this.scene.start('Dungeon', { level: 1, sessionCode: code, role: 'student' });
+    };
+
+    const status = this.add.text(centerX, centerY + 110, '', { fontFamily: 'Arial Black', fontSize: 18, color: '#ef9a9a' }).setOrigin(0.5);
+    const joinBg = this.add.rectangle(centerX, centerY + 50, 220, 56, 0x1565c0).setInteractive({ useHandCursor: true });
+    const joinText = this.add.text(centerX, centerY + 50, 'Join', { fontFamily: 'Arial Black', fontSize: 26, color: '#ffffff' }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+    // Enable keyboard input - this is critical for typing to work
+    if (this.input.keyboard) {
+      this.input.keyboard.enabled = true;
+    }
+
+    // Make the entire scene clickable to ensure canvas gets focus
+    // This helps ensure keyboard input works
+    this.input.on('pointerdown', () => {
+      // Ensure keyboard is enabled when clicking anywhere
+      if (this.input.keyboard) {
+        this.input.keyboard.enabled = true;
+      }
+      // Try to focus the canvas element
+      try {
+        const canvas = this.game.canvas;
+        if (canvas && canvas.focus) {
+          canvas.focus();
+        }
+      } catch (e) {
+        // Canvas focus might not be available in all browsers
+      }
+    });
+
+    // Handle input area clicks - just highlight it
+    inputBg.on('pointerdown', () => {
+      inputBg.setStrokeStyle(2, 0x88c0ff, 1);
+      // Ensure keyboard is enabled
+      if (this.input.keyboard) {
+        this.input.keyboard.enabled = true;
+      }
+    });
+
+    // Handle numeric input - always active when scene is shown
+    this.input.keyboard.on('keydown', (event) => {
+      const key = event.key;
+      
+      // Handle backspace
+      if (key === 'Backspace') {
+        inputText.setText(inputText.text.slice(0, -1));
+        this.time.delayedCall(100, () => drawRankings());
+        return;
+      }
+      
+      // Handle Enter key
+      if (key === 'Enter') {
+        join();
+        return;
+      }
+      
+      // Handle numeric input (0-9)
+      if (key >= '0' && key <= '9' && inputText.text.length < 6) {
+        inputText.setText(inputText.text + key);
+        inputBg.setStrokeStyle(2, 0x88c0ff, 1);
+        this.time.delayedCall(100, () => drawRankings());
+      }
+    });
+
+    // Join button handlers
+    joinBg.on('pointerdown', () => {
+      join();
+    });
+    joinText.on('pointerdown', () => {
+      join();
+    });
+
+    // Visual feedback on hover
+    inputBg.on('pointerover', () => {
+      inputBg.setStrokeStyle(2, 0x88c0ff, 1);
+    });
+    inputBg.on('pointerout', () => {
+      inputBg.setStrokeStyle(2, 0x88c0ff, 1);
+    });
+
+    // Focus the input area when scene loads
+    this.time.delayedCall(200, () => {
+      inputBg.setStrokeStyle(2, 0x88c0ff, 1);
+      // Try to ensure keyboard focus
+      if (this.input.keyboard) {
+        this.input.keyboard.enabled = true;
+      }
+      // Check if there's already a code in localStorage and populate it
+      drawRankings();
+    });
   }
 }
 
