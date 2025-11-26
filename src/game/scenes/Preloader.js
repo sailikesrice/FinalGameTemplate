@@ -63,17 +63,6 @@ export class Preloader extends Scene {
     // Legacy assets (keeping for backward compatibility if needed)
     this.load.image("wall", "assets/wall.png");
     
-    // Button assets (9-slice buttons)
-    this.load.image("topleft-button", "assets/button-assets/topleft-button.webp");
-    this.load.image("top-button", "assets/button-assets/top-button.webp");
-    this.load.image("topright-button", "assets/button-assets/topright-button.webp");
-    this.load.image("left-button", "assets/button-assets/left-button.webp");
-    this.load.image("middle-button", "assets/button-assets/middle-button.webp");
-    this.load.image("right-button", "assets/button-assets/right-button.webp");
-    this.load.image("bottomleft-button", "assets/button-assets/bottomleft-button.webp");
-    this.load.image("bottom-button", "assets/button-assets/bottom-button.webp");
-    this.load.image("bottomright-button", "assets/button-assets/bottomright-button.webp");
-    
     // Card assets (9-slice cards)
     this.load.image("topleft-card", "assets/card-assets/topleft-card.webp");
     this.load.image("top-card", "assets/card-assets/top-card.webp");

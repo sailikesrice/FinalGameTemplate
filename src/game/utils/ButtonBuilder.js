@@ -1,11 +1,11 @@
 /**
- * ButtonBuilder - Utility for creating buttons using 9-slice button assets
- * Automatically sizes buttons based on text length
+ * ButtonBuilder - Utility for creating buttons programmatically
+ * Uses green color scheme and creates rounded rectangle buttons
  */
 
 export class ButtonBuilder {
   /**
-   * Create a button with 9-slice assets that automatically sizes to text
+   * Create a button with a green rounded rectangle background
    * @param {Phaser.Scene} scene - The Phaser scene
    * @param {number} x - X position
    * @param {number} y - Y position
@@ -17,13 +17,18 @@ export class ButtonBuilder {
     const {
       fontSize = 28,
       fontFamily = 'Arial',
-      textColor = '#2c2c2c',
+      textColor = '#ffffff',
       padding = { x: 30, y: 15 },
       minWidth = 120,
       minHeight = 50,
       onClick = null,
       depth = 1000,
-      scrollFactor = 0
+      scrollFactor = 0,
+      backgroundColor = 0x2d8659, // Dark green
+      hoverColor = 0x3fb880, // Light green
+      borderRadius = 12,
+      borderWidth = 3,
+      borderColor = 0x1f5d3f // Darker green for border
     } = options;
 
     // Create text to measure width
@@ -41,95 +46,61 @@ export class ButtonBuilder {
     const buttonWidth = Math.max(minWidth, textWidth + padding.x * 2);
     const buttonHeight = Math.max(minHeight, textHeight + padding.y * 2);
 
-    // Slice size (assuming button pieces are 32x32)
-    const sliceSize = 32;
-    const centerWidth = Math.max(0, buttonWidth - sliceSize * 2);
-    const centerHeight = Math.max(0, buttonHeight - sliceSize * 2);
-
     // Create container for button
     const container = scene.add.container(x, y);
     container.setDepth(depth);
     container.setScrollFactor(scrollFactor);
 
-    const pieces = [];
-    const halfW = buttonWidth / 2;
-    const halfH = buttonHeight / 2;
-
-    // Top-left corner
-    const topLeft = scene.add.image(-halfW, -halfH, 'topleft-button');
-    topLeft.setOrigin(0, 0);
-    container.add(topLeft);
-    pieces.push(topLeft);
-
-    // Top edge (stretch to fill)
-    if (centerWidth > 0) {
-      const top = scene.add.image(0, -halfH, 'top-button');
-      top.setOrigin(0.5, 0);
-      top.setDisplaySize(centerWidth, sliceSize);
-      container.add(top);
-      pieces.push(top);
-    }
-
-    // Top-right corner
-    const topRight = scene.add.image(halfW, -halfH, 'topright-button');
-    topRight.setOrigin(1, 0);
-    container.add(topRight);
-    pieces.push(topRight);
-
-    // Left edge (stretch to fill)
-    if (centerHeight > 0) {
-      const left = scene.add.image(-halfW, 0, 'left-button');
-      left.setOrigin(0, 0.5);
-      left.setDisplaySize(sliceSize, centerHeight);
-      container.add(left);
-      pieces.push(left);
-    }
-
-    // Center (use middle-button as fill)
-    if (centerWidth > 0 && centerHeight > 0) {
-      const center = scene.add.image(0, 0, 'middle-button');
-      center.setOrigin(0.5, 0.5);
-      center.setDisplaySize(centerWidth, centerHeight);
-      container.add(center);
-      pieces.push(center);
-    }
-
-    // Right edge (stretch to fill)
-    if (centerHeight > 0) {
-      const right = scene.add.image(halfW, 0, 'right-button');
-      right.setOrigin(1, 0.5);
-      right.setDisplaySize(sliceSize, centerHeight);
-      container.add(right);
-      pieces.push(right);
-    }
-
-    // Bottom-left corner
-    const bottomLeft = scene.add.image(-halfW, halfH, 'bottomleft-button');
-    bottomLeft.setOrigin(0, 1);
-    container.add(bottomLeft);
-    pieces.push(bottomLeft);
-
-    // Bottom edge (stretch to fill)
-    if (centerWidth > 0) {
-      const bottom = scene.add.image(0, halfH, 'bottom-button');
-      bottom.setOrigin(0.5, 1);
-      bottom.setDisplaySize(centerWidth, sliceSize);
-      container.add(bottom);
-      pieces.push(bottom);
-    }
-
-    // Bottom-right corner
-    const bottomRight = scene.add.image(halfW, halfH, 'bottomright-button');
-    bottomRight.setOrigin(1, 1);
-    container.add(bottomRight);
-    pieces.push(bottomRight);
+    // Create graphics for button background
+    const graphics = scene.add.graphics();
+    
+    // Draw button background with rounded corners
+    const drawButton = (color, isHover = false) => {
+      graphics.clear();
+      
+      // Draw border/shadow (slightly larger, darker)
+      graphics.fillStyle(borderColor, 1);
+      graphics.fillRoundedRect(
+        -buttonWidth / 2 - borderWidth/2,
+        -buttonHeight / 2 - borderWidth/2,
+        buttonWidth + borderWidth,
+        buttonHeight + borderWidth,
+        borderRadius + borderWidth
+      );
+      
+      // Draw main button
+      graphics.fillStyle(color, 1);
+      graphics.fillRoundedRect(
+        -buttonWidth / 2,
+        -buttonHeight / 2,
+        buttonWidth,
+        buttonHeight,
+        borderRadius
+      );
+      
+      // Add a subtle highlight on top
+      if (!isHover) {
+        graphics.fillStyle(0xffffff, 0.15);
+        graphics.fillRoundedRect(
+          -buttonWidth / 2,
+          -buttonHeight / 2,
+          buttonWidth,
+          buttonHeight / 3,
+          { tl: borderRadius, tr: borderRadius, bl: 0, br: 0 }
+        );
+      }
+    };
+    
+    drawButton(backgroundColor);
+    container.add(graphics);
 
     // Add text
     const buttonText = scene.add.text(0, 0, text, {
       fontFamily,
       fontSize,
       color: textColor,
-      resolution: 2
+      resolution: 2,
+      fontStyle: 'bold'
     });
     buttonText.setOrigin(0.5);
     container.add(buttonText);
@@ -140,27 +111,35 @@ export class ButtonBuilder {
 
     // Add hover effects
     container.on('pointerover', () => {
+      drawButton(hoverColor, true);
       container.setScale(1.05);
     });
 
     container.on('pointerout', () => {
+      drawButton(backgroundColor);
       container.setScale(1);
     });
 
-    // Add click handler
-    if (onClick) {
-      container.on('pointerdown', onClick);
-      buttonText.setInteractive({ useHandCursor: true });
-      buttonText.on('pointerdown', onClick);
-    }
+    // Add pressed effect
+    container.on('pointerdown', () => {
+      container.setScale(0.98);
+      if (onClick) {
+        onClick();
+      }
+    });
+
+    container.on('pointerup', () => {
+      if (container.scale === 0.98) {
+        container.setScale(1.05);
+      }
+    });
 
     return {
       container,
       text: buttonText,
-      pieces,
+      graphics,
       width: buttonWidth,
       height: buttonHeight
     };
   }
 }
-
