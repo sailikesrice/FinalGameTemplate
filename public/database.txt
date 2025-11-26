@@ -1,0 +1,11 @@
+# Math Dungeon Session Database
+# Format: CODE|allowedOps|roomsPerLevel|timestamp|results
+# Example: 123456|+,-,×|6|1234567890|[]
+
+# Add session codes below:
+# Each line should follow the format: CODE|allowedOps|roomsPerLevel|timestamp|results
+# Example: 123456|+,-,×,÷|6|1700000000000|[]
+
+# Test session (remove this line when testing with real codes):
+999999|+,-,×,÷|6|1700000000000|[]
+
