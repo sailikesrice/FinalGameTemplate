@@ -41,14 +41,13 @@ export class StudentLeaderboard extends Scene {
       resolution: 2
     }).setOrigin(0.5);
 
-    // Leaderboard Card
-    const leaderboardCard = CardBuilder.createCard(this, centerX, 250, ['Leaderboard'], {
+    // Leaderboard title
+    this.add.text(centerX, 170, 'Leaderboard', {
+      fontFamily: 'Arial',
       fontSize: 28,
-      padding: { x: 30, y: 20 },
-      minWidth: 400,
-      minHeight: 300,
-      align: 'center'
-    });
+      color: '#ffffff',
+      resolution: 2
+    }).setOrigin(0.5);
 
     // Back button (top-left)
     ButtonBuilder.createButton(this, 80, 30, '← Back', {
@@ -59,7 +58,6 @@ export class StudentLeaderboard extends Scene {
     });
 
     this.leaderboardTexts = [];
-    this.leaderboardCard = leaderboardCard;
 
     this.waitText = this.add.text(centerX, this.scale.height - 140, 'Waiting for the next game...', {
       fontFamily: 'Arial',
@@ -94,7 +92,7 @@ export class StudentLeaderboard extends Scene {
     const entries = Object.entries(pointsMap).sort((a, b) => b[1] - a[1]);
 
     if (entries.length === 0) {
-      const text = this.add.text(this.scale.width / 2, 250, 'No scores yet', {
+      const text = this.add.text(this.scale.width / 2, 200, 'No scores yet', {
         fontFamily: 'Arial',
         fontSize: 20,
         color: '#bbbbbb',
@@ -104,7 +102,8 @@ export class StudentLeaderboard extends Scene {
       return;
     }
 
-    let y = 250;
+    // Position leaderboard entries starting below the card title
+    let y = 200;
     entries.slice(0, 8).forEach(([name, points], idx) => {
       const line = this.add.text(this.scale.width / 2, y, `${idx + 1}. ${name} - ${points} pts`, {
         fontFamily: 'Arial',
@@ -113,7 +112,7 @@ export class StudentLeaderboard extends Scene {
         resolution: 2
       }).setOrigin(0.5);
       this.leaderboardTexts.push(line);
-      y += 28;
+      y += 30;
     });
   }
 

@@ -295,10 +295,31 @@ export class TeacherDashboard extends Scene {
   async startSession() {
     if (!this.teacherSessionCode || !this.sessionData) return;
     const status = this.sessionData.status || 'waiting';
-    if (status === 'in_progress' || status === 'completed') return;
-    await SessionManager.setSessionStatus(this.teacherSessionCode, 'in_progress', {
-      startTime: Date.now()
-    });
+    
+    // Don't allow starting if already in progress
+    if (status === 'in_progress') return;
+    
+    // If completed, reset the session for a new game
+    if (status === 'completed') {
+      await SessionManager.updateSession(this.teacherSessionCode, (session) => {
+        session.status = 'in_progress';
+        session.startTime = Date.now();
+        session.results = [];
+        session.currentLevel = 1;
+        // Reset points but keep students
+        const resetPoints = {};
+        Object.keys(session.points || {}).forEach(name => {
+          resetPoints[name] = 0;
+        });
+        session.points = resetPoints;
+        return session;
+      });
+    } else {
+      // Normal start from waiting
+      await SessionManager.setSessionStatus(this.teacherSessionCode, 'in_progress', {
+        startTime: Date.now()
+      });
+    }
   }
 }
 
